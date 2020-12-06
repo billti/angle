@@ -9,10 +9,9 @@
 #include "system_utils.h"
 
 #include <stdarg.h>
+#include <limits.h>
 #include <windows.h>
 #include <array>
-#include <codecvt>
-#include <locale>
 #include <string>
 
 namespace angle
@@ -30,13 +29,46 @@ std::string GetEnvironmentVar(const char *variableName)
     return "";
 }
 
+std::wstring ConvertStringToWString(const std::string& input) {
+    static_assert(sizeof(wchar_t) == 2, "Incorrect wchar_t size for Windows code");
+
+    std::wstring result;
+    if (input.empty()) return result;
+
+    // Ensure the string (inc NULL) length fits in the int type the API uses
+    if (input.length() > INT_MAX - 1) std::terminate();
+    int input_length = static_cast<int>(input.length()) + 1;
+
+    // Get the buffer size needed
+    int utf16_chars =
+        ::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+                              input.c_str(), input_length,
+                              nullptr, 0);
+    if (utf16_chars <= 0) {
+        // Something failed (e.g. invalid chars, insufficient buffer, etc.)
+        std::terminate();
+     }
+
+    result.reserve(utf16_chars);
+
+    // Shouldn't need this cast since C++17, but current still errors without it
+    wchar_t *data = const_cast<wchar_t *>(result.data());
+
+    if (!::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+                          input.c_str(), input_length,
+                          data, utf16_chars)) {
+        std::terminate();
+    }
+
+    return result;
+}
+
 class UwpLibrary : public Library
 {
   public:
     UwpLibrary(const char *libraryName, SearchType searchType)
     {
-        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-        std::wstring wideBuffer = converter.from_bytes(libraryName);
+        std::wstring wideBuffer = ConvertStringToWString(libraryName);
 
         switch (searchType)
         {
