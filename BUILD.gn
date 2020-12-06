@@ -194,6 +194,9 @@ config("extra_warnings") {
 
   if (angle_is_winuwp) {
     cflags += [ "/wd4447" ]  # 'main' signature found without threading model.
+    if (is_clang) {
+      cflags += [ "-Wno-global-constructors", "-Wno-exit-time-destructors", "-Wno-header-hygiene", "-Wno-unused-const-variable", "-Wno-reorder-ctor", "-Wno-inconsistent-missing-destructor-override", "-Wno-ignored-attributes", "-Wno-missing-field-initializers", "-Wno-suggest-destructor-override" ]
+    }
   }
 }
 
