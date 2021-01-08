@@ -59,6 +59,8 @@
 
 // Include D3D11 headers when OpenGL is enabled on Windows for interop extensions.
 #    if defined(ANGLE_ENABLE_D3D11) || defined(ANGLE_ENABLE_OPENGL)
+         // d3d_format.h requires some types from D3D9, regardless of D3D9 support.
+#        include <d3d9.h>
 #        include <d3d10_1.h>
 #        include <d3d11.h>
 #        include <d3d11_3.h>
